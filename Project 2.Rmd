@@ -1,0 +1,130 @@
+---
+title: "Project 2"
+date: "2025-02-08"
+output: html_document
+---
+The project focuses on predicting gestational diabetes using a dataset from Kaggle. Let's go through the steps for regression profiling with feature selection and linear regression.
+
+---
+### Step 1: Select Features
+Based on the dataset attributes, we can select three important features for regression analysis:
+1. Glucose – Strongly related to diabetes.
+2. BMI – A major factor influencing diabetes risk.
+3. Age – Older individuals are more prone to diabetes.
+
+---
+
+### Step 2: Find Feature Importance Using Linear Regression
+We'll compare the performance of `read.csv()` and `fread()`.
+
+```{r}
+library(data.table)
+library(ggplot2)
+library(profvis)
+```
+
+```{r}
+# Load data using read.csv()
+df1 <- read.csv("diabetes.csv")
+
+# Run Linear Regression
+model1 <- lm(Outcome ~ Glucose + BMI + Age, data = df1)
+
+# Print feature importance
+summary(model1)
+```
+
+```{r}
+# Load data using fread()
+df2 <- fread("diabetes.csv")
+
+# Run Linear Regression
+model2 <- lm(Outcome ~ Glucose + BMI + Age, data = df2)
+
+# Print feature importance
+summary(model2)
+```
+
+
+
+### Step 3: Profiling for Performance Optimization
+# Profiling helps identify bottlenecks in execution time. We use `system.time()` to compare the two methods.
+```{r}
+
+# Measure time for read.csv()
+time_read_csv <- system.time(df1 <- read.csv("diabetes.csv"))
+time_lm_csv <- system.time(model1 <- lm(Outcome ~ Glucose + BMI + Age, data = df1))
+
+# Measure time for fread()
+time_fread <- system.time(df2 <- fread("diabetes.csv"))
+time_lm_fread <- system.time(model2 <- lm(Outcome ~ Glucose + BMI + Age, data = df2))
+
+# Compare running times
+time_read_csv
+time_lm_csv
+time_fread
+time_lm_fread
+
+```
+
+
+```{r}
+### Step 4: Performance Profiling and Data Tab
+
+# Profile read.csv method
+gc()
+Rprof("profile_csv")
+for (i in 1:100) {  # Loop to increase execution time
+    df1 <- read.csv("diabetes.csv")
+    model1 <- lm(Outcome ~ Glucose + BMI + Age, data = df1)
+}
+Rprof(NULL)
+summaryRprof("profile_csv")
+
+
+# Profile fread method
+gc()
+Rprof("profile_fread")
+for (i in 1:100) {  # Loop to increase execution time
+    df2 <- fread("diabetes.csv")
+    model2 <- lm(Outcome ~ Glucose + BMI + Age, data = df2)
+}
+Rprof(NULL)
+summaryRprof("profile_fread")
+
+
+# First show data tab with first 10 rows
+diabetes_preview <- read.csv('diabetes.csv',
+                          stringsAsFactors = F,
+                          header = T,
+                          nrows = 10,
+                          comment.char ="")
+print("Data Preview (First 10 rows):")
+print(diabetes_preview)  
+```
+
+
+```{r}
+# Generate a Flame Graph with Profvis for read.csv
+gc()
+profvis({
+    for (i in 1:100) {  # Increase iterations to capture profiling details
+        df1 <- read.csv("diabetes.csv")
+        model1 <- lm(Outcome ~ Glucose + BMI + Age, data = df1)
+    }
+    summary(model1)
+})
+```
+
+```{r}
+# Generate a Flame Graph with Profvis for fread
+gc()
+profvis({
+    for (i in 1:100) {  # Increase iterations
+        df2 <- fread("diabetes.csv")
+        model2 <- lm(Outcome ~ Glucose + BMI + Age, data = df2)
+    }
+    summary(model2)
+})
+```
+
